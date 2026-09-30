@@ -512,8 +512,23 @@ export function RepurposePage() {
         <div className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm">
           <Info className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="text-amber-800 dark:text-amber-200">
-            No AI provider is configured, so the built-in generator is being used. It restructures your own words only and never invents facts. For real rewrites, set <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">AI_API_KEY</code> in{' '}
-            <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">.env</code> and restart the dev server.
+            The built-in generator is being used. It restructures your own words only and never invents
+            facts, so it cannot genuinely rewrite.{' '}
+            {status?.proxyReachable ? (
+              <>
+                AI writing is switched off on this server: it is running, but no AI provider is configured
+                on it. Whoever runs this deployment needs to set{' '}
+                <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">AI_API_KEY</code> and
+                redeploy.
+              </>
+            ) : (
+              <>
+                No AI server responded, which is expected for a static build with no proxy attached. For
+                real rewrites, run <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">npm run dev</code>{' '}
+                with <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">AI_API_KEY</code> set
+                in <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">.env</code>.
+              </>
+            )}
           </p>
         </div>
       )}

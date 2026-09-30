@@ -10,7 +10,18 @@ export interface AiStatus {
   aiEnabled: boolean;
   provider: string | null;
   model: string | null;
+  /**
+   * Whether the /api/health route answered at all.
+   *
+   * This separates the two reasons AI can be unavailable: the server is
+   * unreachable (a static build with no proxy), or the server is running but
+   * has no provider configured. The UI says something different for each,
+   * because the fix is different.
+   */
+  proxyReachable: boolean;
 }
+
+const OFFLINE: AiStatus = { aiEnabled: false, provider: null, model: null, proxyReachable: false };
 
 let cachedStatus: AiStatus | null = null;
 
@@ -19,10 +30,16 @@ export async function getAiStatus(force = false): Promise<AiStatus> {
   try {
     const res = await fetch('/api/health');
     if (!res.ok) throw new Error('health check failed');
-    cachedStatus = (await res.json()) as AiStatus;
+    const body = (await res.json()) as Partial<AiStatus>;
+    cachedStatus = {
+      aiEnabled: body.aiEnabled === true,
+      provider: body.provider ?? null,
+      model: body.model ?? null,
+      proxyReachable: true,
+    };
   } catch {
     // No proxy running (e.g. static build served by a dumb file server).
-    cachedStatus = { aiEnabled: false, provider: null, model: null };
+    cachedStatus = { ...OFFLINE };
   }
   return cachedStatus;
 }
