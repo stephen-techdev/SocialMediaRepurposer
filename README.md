@@ -23,6 +23,8 @@ The app boots with **no configuration at all**. Without keys it runs in local-on
 | `npm run preview` | Serve the build (AI proxy stays active) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
+| `npm run doctor` | Check configuration and connectivity |
+| `npm run verify-ai` | Prove the AI path against a mock provider — no real API call, never touches `.env` |
 
 ---
 
@@ -81,17 +83,45 @@ Two extra protections on that route:
 - **`APP_SECRET` session guard.** `/api/health` sets an `HttpOnly`, `SameSite=Strict` cookie signed with HMAC-SHA256. `/api/generate` refuses to spend the API key without a valid one. Without this, any website you visit could POST to `http://localhost:5173/api/generate` and drain your quota.
 - **Rate limit + body cap.** `AI_RATE_LIMIT` per IP per minute, 200 KB request cap, `timingSafeEqual` on signature checks.
 
-This is a local-dev guard, not production auth. Before deploying, put real authentication in front of `/api/generate`.
+This is a **local-dev guard, not production auth.** Locally it stops other websites from POSTing to `http://localhost:5173` and burning your quota. It is not authentication: in production, anyone who can load the app is handed a valid cookie and can then spend your quota. The rate limit is also per-process, so a serverless fleet multiplies the effective ceiling.
+
+**Before exposing a deployment publicly, put real authentication in front of `/api/generate`** (or delete the function and let the app run its offline generator). The deployed instance described below is fine for personal use on a protected URL, not for an open site.
 
 `.env` is git-ignored; `.env.example` is committed.
+
+---
+
+## Deploying to Vercel
+
+The AI proxy is not a static asset — it needs a Node runtime. `api/health.ts` and `api/generate.ts` are serverless functions that reuse the same core as the local dev server, so the key stays server-side on Vercel too. Vercel will not read your `.env`; set the variables in the dashboard (or with `vercel env add`).
+
+```bash
+npx vercel link --project <name>
+npx vercel env add AI_API_KEY production --sensitive   # pipes from stdin; the value is never in a command line
+npx vercel env add APP_SECRET production --sensitive
+npx vercel --prod
+```
+
+Without `AI_API_KEY` the deployment still builds and runs — the app detects that no provider is configured and uses the offline generator. `GET /api/health` reports `aiEnabled: false` so you can confirm which mode you are in.
+
+Two Vercel-specific notes:
+
+- **Mark `VITE_*` variables as Config, not Secret.** They are compiled into the public bundle by design; the Supabase anon key is meant to be public and is protected by row-level security. Vercel rejects `--sensitive` on a `VITE_` prefix for this reason.
+- **Imports in `server/` and `api/` use explicit `.js` extensions.** Vercel compiles the functions to native ESM, and Node's ESM resolver does not do extensionless lookups. Vite hides this, so the app passes `typecheck` and works locally while every function fails in production with `ERR_MODULE_NOT_FOUND` if you drop them.
 
 ---
 
 ## Architecture
 
 ```
-server/aiProxy.ts       Secret-holding API route. Provider dispatch, rate limit,
-                       session guard, JSON extraction.
+server/aiCore.ts        Host-agnostic AI core. Provider dispatch, rate limit,
+                       JSON extraction. No Vite or Vercel imports.
+server/aiHandler.ts     The /api/generate request logic, written against a small
+                       transport interface so both hosts run identical checks.
+server/aiSession.ts     HMAC session-cookie signing and verification.
+server/aiProxy.ts       Vite dev/preview adapter for the above.
+api/health.ts           Vercel serverless function  -> GET  /api/health
+api/generate.ts         Vercel serverless function  -> POST /api/generate
 src/lib/prompts.ts      Per-platform playbooks + the system prompt. The playbook
                         is the main quality lever: raw "write a post" prompts
                         produce generic output.

@@ -35,8 +35,13 @@ export interface GenerateOptions {
   enabled: boolean;
 }
 
+/*
+ * One message for both hosts. On Vercel the fix is an env var in the dashboard
+ * and a redeploy, not editing a .env file, so the wording stays host-neutral
+ * and the deployment instructions live in the README.
+ */
 const NO_CONFIG_MESSAGE =
-  'No AI provider configured. Add AI_API_KEY (and AI_MODEL / AI_BASE_URL) to .env, then restart the dev server.';
+  'No AI provider is configured for this deployment. An administrator needs to set AI_API_KEY (and optionally AI_MODEL / AI_BASE_URL) in the server environment and redeploy.';
 
 export function createGenerateHandler(options: GenerateOptions) {
   const cfg: AIConfig | null = readAIConfig(options.env);
