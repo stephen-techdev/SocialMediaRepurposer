@@ -27,6 +27,15 @@ interface CapturedRequest {
 }
 let lastBody: CapturedRequest | null = null;
 
+/**
+ * Reads back the captured body. A function is used because `lastBody` is
+ * assigned inside the mock server's request callback, which control-flow
+ * analysis cannot see - it would otherwise narrow the read site to `null`.
+ */
+function capturedUserMessage(): string {
+  return String(lastBody?.messages?.[1]?.content ?? '');
+}
+
 const mockServer = createServer((req, res) => {
   let raw = '';
   req.on('data', (c) => (raw += c));
@@ -138,7 +147,7 @@ try {
 
 const results: Array<[string, boolean, string]> = [];
 const h = await fetch(`${base}/api/health`);
-const health = await h.json();
+const health = (await h.json()) as { aiEnabled?: boolean; model?: string };
 results.push(['health reports AI enabled', health.aiEnabled === true, JSON.stringify(health)]);
 results.push(['health names the model', health.model === 'mock-model', String(health.model)]);
 results.push(['health leaks no key', !JSON.stringify(health).includes(FAKE_KEY), '']);
@@ -151,12 +160,16 @@ const gen = await fetch(`${base}/api/generate`, {
   headers: { 'Content-Type': 'application/json', Cookie: cookie },
   body: JSON.stringify({ prompt: 'Write a Tamil election caption', json: true }),
 });
-const genBody = await gen.json();
+const genBody = (await gen.json()) as { text?: string; error?: string };
 results.push(['generate returns 200', gen.status === 200, `status ${gen.status}`]);
-results.push(['response carries text', typeof genBody.text === 'string' && genBody.text.includes('Thoothukudi'), '']);
+results.push([
+  'response carries text',
+  typeof genBody.text === 'string' && genBody.text.includes('Thoothukudi'),
+  genBody.error ?? '',
+]);
 results.push(['fenced JSON survived', typeof genBody.text === 'string' && genBody.text.includes('```'), '']);
 results.push(['server sent the key upstream', lastAuthHeader === `Bearer ${FAKE_KEY}`, lastAuthHeader.slice(0, 24) + '...']);
-results.push(['prompt reached the provider', String(lastBody?.messages?.[1]?.content ?? '').includes('Tamil election'), '']);
+results.push(['prompt reached the provider', capturedUserMessage().includes('Tamil election'), '']);
 
 stopChild();
 
