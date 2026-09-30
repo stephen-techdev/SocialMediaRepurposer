@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import type { Post } from '../lib/supabase';
 import { clearHistory, deletePost, listPosts, storageMode } from '../lib/store';
 import { useToast } from '../hooks/useToast';
@@ -15,8 +14,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-export function HistoryPage({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user } = useAuth();
+export function HistoryPage() {
   const { toasts, success, error, removeToast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,13 +24,13 @@ export function HistoryPage({ onNavigate }: { onNavigate: (page: string) => void
 
   const load = useCallback(async () => {
     try {
-      setPosts(await listPosts({ userId: user?.id ?? null, limit: 200 }));
+      setPosts(await listPosts({ limit: 200 }));
     } catch {
       error('Failed to load history');
     } finally {
       setLoading(false);
     }
-  }, [user?.id, error]);
+  }, [error]);
 
   useEffect(() => {
     void load();
@@ -40,7 +38,7 @@ export function HistoryPage({ onNavigate }: { onNavigate: (page: string) => void
 
   const handleDelete = async (postId: string) => {
     try {
-      await deletePost(postId, user?.id ?? null);
+      await deletePost(postId);
       setPosts(posts.filter(p => p.id !== postId));
       success('Post deleted');
     } catch {
@@ -52,7 +50,7 @@ export function HistoryPage({ onNavigate }: { onNavigate: (page: string) => void
     if (!confirm('Are you sure you want to delete all history? This cannot be undone.')) return;
 
     try {
-      await clearHistory(user?.id ?? null);
+      await clearHistory();
       setPosts([]);
       success('All history cleared');
     } catch {
@@ -100,12 +98,7 @@ export function HistoryPage({ onNavigate }: { onNavigate: (page: string) => void
 
       {storageMode === 'local' && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
-          <span>
-            History is stored in this browser only. Add Supabase keys to <code>.env</code> to sync it across devices.
-          </span>
-          <button onClick={() => onNavigate('auth')} className="ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium">
-            Sign in
-          </button>
+          <span>History is stored in this browser only. Clearing your browser data will remove it.</span>
         </div>
       )}
 

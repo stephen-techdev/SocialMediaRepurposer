@@ -1,29 +1,12 @@
 /**
- * Supabase is OPTIONAL.
+ * Row shapes shared by the store and the pages.
  *
- * The original code threw on startup when the env vars were missing, which made
- * the app impossible to run locally. Now the client is null when unconfigured
- * and everything in this module transparently falls back to localStorage.
- * Add credentials to .env to turn cloud sync back on - no code changes needed.
+ * These used to be backed by a live Supabase client that was created whenever
+ * `VITE_SUPABASE_*` keys were present. Accounts have been removed, so nothing
+ * reads or writes Supabase any more and building a client would only ship an
+ * unused dependency to the browser. The types are kept so the existing code
+ * still compiles unchanged.
  */
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl as string, supabaseAnonKey as string, {
-      auth: { persistSession: true, autoRefreshToken: true },
-    })
-  : null;
-
-if (!isSupabaseConfigured) {
-  console.info(
-    '[supabase] Not configured - running in local-only mode. History, favourites and analytics are stored in this browser.',
-  );
-}
 
 export type Profile = {
   id: string;

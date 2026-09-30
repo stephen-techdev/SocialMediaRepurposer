@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { loadLocalProfile, saveLocalProfile } from '../lib/store';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
@@ -18,47 +18,39 @@ import {
 } from 'lucide-react';
 
 export function SettingsPage() {
-  const { user, profile, updateProfile } = useAuth();
   const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast } = useTheme();
   const { toasts, success, error, removeToast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [localSettings, setLocalSettings] = useState({
-    default_platform: 'twitter',
-    default_tone: 'professional',
-    language: 'en',
-    auto_save: true,
-    notifications: true,
+  // There is no account, so these are seeded from localStorage and written back
+  // to it. The previous version bailed out early when nobody was signed in,
+  // which made the Save button silently do nothing.
+  const [localSettings, setLocalSettings] = useState(() => {
+    const stored = loadLocalProfile() ?? {};
+    return {
+      default_platform: (stored.default_platform as string) || 'twitter',
+      default_tone: (stored.default_tone as string) || 'professional',
+      language: (stored.language as string) || 'en',
+      auto_save: (stored.auto_save as boolean) ?? true,
+      notifications: (stored.notifications as boolean) ?? true,
+    };
   });
 
   useEffect(() => {
-    if (profile) {
-      setLocalSettings({
-        default_platform: profile.default_platform || 'twitter',
-        default_tone: profile.default_tone || 'professional',
-        language: profile.language || 'en',
-        auto_save: profile.auto_save ?? true,
-        notifications: profile.notifications ?? true,
-      });
-    }
-  }, [profile]);
+    // Preferences must be available before the first generation, not only after
+    // the user visits Settings and presses Save.
+    saveLocalProfile({ ...loadLocalProfile(), ...localSettings });
+  }, [localSettings]);
 
-  const handleSave = async () => {
-    if (!user) return;
-
+  const handleSave = () => {
     setSaving(true);
     try {
-      const { error: updateError } = await updateProfile({
-        default_platform: localSettings.default_platform,
-        default_tone: localSettings.default_tone,
-        language: localSettings.language,
-        auto_save: localSettings.auto_save,
-        notifications: localSettings.notifications,
+      saveLocalProfile({
+        ...loadLocalProfile(),
+        ...localSettings,
         theme,
         font_size: fontSize,
         high_contrast: highContrast,
       });
-
-      if (updateError) throw updateError;
       success('Settings saved');
     } catch {
       error('Failed to save settings');

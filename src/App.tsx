@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useState } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Sidebar, MobileHeader } from './components/Sidebar';
-import { AuthPage } from './components/Auth';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { RepurposePage } from './pages/RepurposePage';
@@ -19,13 +17,6 @@ import { AIToolsPage } from './pages/AIToolsPage';
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user && currentPage === 'home') {
-      setCurrentPage('dashboard');
-    }
-  }, [user]);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -45,7 +36,7 @@ function AppContent() {
           handleNavigate('repurpose');
         }} />;
       case 'history':
-        return <HistoryPage onNavigate={handleNavigate} />;
+        return <HistoryPage />;
       case 'favorites':
         return <FavoritesPage onNavigate={handleNavigate} />;
       case 'analytics':
@@ -60,8 +51,6 @@ function AppContent() {
         return <ContactPage />;
       case 'ai-tools':
         return <AIToolsPage />;
-      case 'auth':
-        return <AuthPage onNavigate={handleNavigate} />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
@@ -87,9 +76,7 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AppContent />
     </ThemeProvider>
   );
 }

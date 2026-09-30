@@ -13,12 +13,9 @@ import {
   Menu,
   X,
   Sparkles,
-  LogOut,
-  User,
   Sun,
   Moon,
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 const NAV_ITEMS = [
@@ -43,7 +40,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onNavigate, isOpen, onToggle }: SidebarProps) {
-  const { user, signOut, profile } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -112,52 +108,14 @@ export function Sidebar({ currentPage, onNavigate, isOpen, onToggle }: SidebarPr
           </nav>
 
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            {user ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">
-                      {profile?.display_name || user.email?.split('@')[0]}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleTheme}
-                    aria-label="Toggle theme"
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    <span className="font-medium text-sm">{resolvedTheme === 'dark' ? 'Light' : 'Dark'}</span>
-                  </button>
-                  <button
-                    onClick={signOut}
-                    aria-label="Sign out"
-                    className="flex items-center justify-center px-3 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  Sign in to save your work
-                </p>
-                <button
-                  onClick={() => onNavigate('auth')}
-                  className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium hover:shadow-lg transition-shadow"
-                >
-                  Sign In
-                </button>
-              </div>
-            )}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <span className="font-medium text-sm">{resolvedTheme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
           </div>
         </div>
       </aside>

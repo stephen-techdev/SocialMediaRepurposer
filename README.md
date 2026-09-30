@@ -8,7 +8,7 @@ Turn one story into platform-native posts in the language your audience actually
 
 ```bash
 npm install
-cp .env.example .env     # then fill in AI_API_KEY and the Supabase keys
+cp .env.example .env     # then fill in AI_API_KEY
 npm run dev
 ```
 
@@ -63,14 +63,7 @@ Any other OpenAI-compatible endpoint: `AI_PROVIDER=custom` plus `AI_BASE_URL` an
 
 ### 2. Client-visible config
 
-Only `VITE_`-prefixed variables reach the browser.
-
-```dotenv
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-```
-
-The Supabase **anon key is designed to be public** — it is protected by row-level security. Never put the `SERVICE_ROLE` key in `.env`; it bypasses RLS and must stay server-side.
+There are no client-visible secrets any more. Sign-in and cloud sync have been removed, so the app has no `VITE_*` variables to set. History, favourites, analytics and preferences all live in this browser's localStorage.
 
 ---
 
@@ -106,7 +99,7 @@ Without `AI_API_KEY` the deployment still builds and runs — the app detects th
 
 Two Vercel-specific notes:
 
-- **Mark `VITE_*` variables as Config, not Secret.** They are compiled into the public bundle by design; the Supabase anon key is meant to be public and is protected by row-level security. Vercel rejects `--sensitive` on a `VITE_` prefix for this reason.
+- **Set every AI variable as a Secret.** They are read inside the function, never in the browser, so `--sensitive` is correct. Vercel rejects `--sensitive` on a `VITE_`-prefixed name, because those are compiled into the public bundle.
 - **Imports in `server/` and `api/` use explicit `.js` extensions.** Vercel compiles the functions to native ESM, and Node's ESM resolver does not do extensionless lookups. Vite hides this, so the app passes `typecheck` and works locally while every function fails in production with `ERR_MODULE_NOT_FOUND` if you drop them.
 
 ---
@@ -132,9 +125,8 @@ src/lib/utils.ts        Unicode-safe text engine: sentence splitting, keyword
                         extraction, Tamil romanisation, hashtag building.
 src/lib/contentGenerator.ts
                         Orchestration + output validation. Two engines.
-src/lib/store.ts        Persistence. Supabase when configured, localStorage
-                        otherwise.
-src/lib/supabase.ts     Optional client — null when unconfigured.
+src/lib/store.ts        Persistence. localStorage only - there are no accounts.
+src/lib/supabase.ts     Row types (Post, Analytics, Profile). No client is created.
 ```
 
 ### Two engines
@@ -156,7 +148,7 @@ If the AI call fails for one platform, only that platform falls back — a singl
 | Same text returned 3× with different emoji | Deterministic per-variation sentence budget, rotation, CTA and emoji |
 | Generated "Introducing a revolutionary solution…" regardless of input | Output derived from your content |
 | Contact form faked a success toast | Opens a pre-filled `mailto:` |
-| Supabase missing → app threw at startup | Fully functional local-only mode |
+| Missing backend threw at startup | Everything works from localStorage; there is no backend |
 
 ---
 
@@ -197,4 +189,4 @@ Settings persist to `localStorage`, so a half-built setup survives navigation.
 
 ## Privacy
 
-Prompts are sent to whichever AI provider you configure — read their policy before pasting sensitive material. Images never leave the browser. History and analytics are local to your browser unless Supabase is configured.
+Prompts are sent to whichever AI provider you configure — read their policy before pasting sensitive material. Images never leave the browser. History, favourites and analytics are stored only in this browser's localStorage - there is no account and no server-side copy.

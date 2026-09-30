@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import type { Analytics } from '../lib/supabase';
 import { listAnalytics, listPosts } from '../lib/store';
 import { BarChart3, TrendingUp, Calendar, PieChart, Activity, Loader2 } from 'lucide-react';
 
 export function AnalyticsPage({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user } = useAuth();
   const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPosts, setTotalPosts] = useState(0);
@@ -13,10 +11,9 @@ export function AnalyticsPage({ onNavigate }: { onNavigate: (page: string) => vo
   useEffect(() => {
     async function fetchAnalytics() {
       try {
-        const ownerId = user?.id ?? null;
         const [rows, posts] = await Promise.all([
-          listAnalytics(ownerId, 12),
-          listPosts({ userId: ownerId, limit: 500 }),
+          listAnalytics(12),
+          listPosts({ limit: 500 }),
         ]);
         setAnalytics(rows);
         setTotalPosts(posts.length);
@@ -28,7 +25,7 @@ export function AnalyticsPage({ onNavigate }: { onNavigate: (page: string) => vo
     }
 
     void fetchAnalytics();
-  }, [user?.id]);
+  }, []);
 
   if (loading) {
     return (
@@ -51,11 +48,6 @@ export function AnalyticsPage({ onNavigate }: { onNavigate: (page: string) => vo
             <button onClick={() => onNavigate('repurpose')} className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium">
               Start Creating
             </button>
-            {!user && (
-              <button onClick={() => onNavigate('auth')} className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                Sign in
-              </button>
-            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import {
@@ -194,7 +193,6 @@ function Section({ title, icon, children, defaultOpen = true }: { title: string;
 }
 
 export function RepurposePage() {
-  const { user } = useAuth();
   const { toasts, success, error, info, removeToast } = useToast();
 
   const [form, setForm] = useState<FormState>(loadForm);
@@ -384,7 +382,7 @@ export function RepurposePage() {
       if (form.platforms.length && flat.length) {
         void addPosts(
           flat.map((v) => ({
-            user_id: user?.id ?? 'local',
+            user_id: 'local',
             original_content: form.content,
             platform: v.platform,
             tone: form.tone,
@@ -395,10 +393,8 @@ export function RepurposePage() {
             cta: v.cta,
             character_count: v.characterCount,
           })),
-          user?.id,
         );
         void recordGeneration({
-          userId: user?.id ?? null,
           platforms: form.platforms,
           tones: [form.tone],
           count: flat.length,
@@ -507,31 +503,6 @@ export function RepurposePage() {
           )}
         </div>
       </div>
-
-      {!status?.aiEnabled && (
-        <div className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm">
-          <Info className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-amber-800 dark:text-amber-200">
-            The built-in generator is being used. It restructures your own words only and never invents
-            facts, so it cannot genuinely rewrite.{' '}
-            {status?.proxyReachable ? (
-              <>
-                AI writing is switched off on this server: it is running, but no AI provider is configured
-                on it. Whoever runs this deployment needs to set{' '}
-                <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">AI_API_KEY</code> and
-                redeploy.
-              </>
-            ) : (
-              <>
-                No AI server responded, which is expected for a static build with no proxy attached. For
-                real rewrites, run <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">npm run dev</code>{' '}
-                with <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">AI_API_KEY</code> set
-                in <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">.env</code>.
-              </>
-            )}
-          </p>
-        </div>
-      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* ------------------------------- input ------------------------------ */}
@@ -871,23 +842,30 @@ export function RepurposePage() {
             </button>
 
             {showPlatforms && (
-              <div className="mt-2 max-h-72 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                {PLATFORMS.map((platform) => (
-                  <button
-                    key={platform.id}
-                    type="button"
-                    onClick={() => togglePlatform(platform.id)}
-                    className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${form.platforms.includes(platform.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                  >
-                    <span className={`w-5 h-5 rounded flex items-center justify-center border shrink-0 ${form.platforms.includes(platform.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
-                      {form.platforms.includes(platform.id) && <Check className="w-3 h-3 text-white" />}
-                    </span>
-                    <span className="text-left">
-                      <span className="block text-sm font-medium text-gray-900 dark:text-white">{platform.name}</span>
-                      <span className="block text-xs text-gray-500 dark:text-gray-400">{platform.charLimit.toLocaleString()} chars max</span>
-                    </span>
-                  </button>
-                ))}
+              /* Horizontal wrap: platforms sit side by side and flow onto the next
+                 line, instead of a single vertical column. Each chip carries the
+                 character limit on a second line so it stays readable at this width. */
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PLATFORMS.map((platform) => {
+                  const selected = form.platforms.includes(platform.id);
+                  return (
+                    <button
+                      key={platform.id}
+                      type="button"
+                      onClick={() => togglePlatform(platform.id)}
+                      aria-pressed={selected}
+                      title={`${platform.name} - ${platform.charLimit.toLocaleString()} chars max`}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors ${
+                        selected
+                          ? 'bg-blue-500 border-blue-500 text-white'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400 dark:hover:border-blue-500'
+                      }`}
+                    >
+                      {selected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      <span className="text-sm font-medium leading-tight">{platform.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 

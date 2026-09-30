@@ -68,25 +68,14 @@ if (provider === 'ollama') {
   console.log(c.ok('AI generation should be live once the dev server restarts'));
 }
 
-const supabaseUrl = env.VITE_SUPABASE_URL || '';
-const supabaseKey = env.VITE_SUPABASE_ANON_KEY || '';
-if (supabaseUrl && supabaseKey) {
-  try {
-    const res = await fetch(`${supabaseUrl}/auth/v1/health`, {
-      headers: { apikey: supabaseKey },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (res.ok) {
-      const body = (await res.json()) as { version?: string };
-      console.log(c.ok(`Supabase reachable (GoTrue ${body.version ?? 'unknown'}) - history syncs to the cloud`));
-    } else {
-      console.log(c.bad(`Supabase returned ${res.status} - check the URL and anon key`));
-    }
-  } catch {
-    console.log(c.warn('Supabase is not reachable - falling back to local-only mode'));
-  }
-} else {
-  console.log(c.warn('Supabase keys missing -> history/favourites stay in this browser'));
+// Sign-in and cloud sync have been removed, so there is no backend to probe.
+// History, favourites, analytics and preferences are localStorage only.
+console.log(c.ok('Storage: localStorage only (no account, no server-side copy)'));
+
+if (env.VITE_SUPABASE_URL || env.VITE_SUPABASE_ANON_KEY) {
+  console.log(
+    c.warn('VITE_SUPABASE_* are still set in .env but are no longer read. Safe to delete them.'),
+  );
 }
 
 const secret = env.APP_SECRET || '';

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import type { Post } from '../lib/supabase';
 import { listPosts, setFavorite, storageMode } from '../lib/store';
 import { useToast } from '../hooks/useToast';
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 
 export function FavoritesPage({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user } = useAuth();
   const { toasts, success, error, removeToast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,13 +22,13 @@ export function FavoritesPage({ onNavigate }: { onNavigate: (page: string) => vo
 
   const load = useCallback(async () => {
     try {
-      setPosts(await listPosts({ userId: user?.id ?? null, onlyFavorites: true, limit: 200 }));
+      setPosts(await listPosts({ onlyFavorites: true, limit: 200 }));
     } catch {
       error('Failed to load favorites');
     } finally {
       setLoading(false);
     }
-  }, [user?.id, error]);
+  }, [error]);
 
   useEffect(() => {
     void load();
@@ -38,7 +36,7 @@ export function FavoritesPage({ onNavigate }: { onNavigate: (page: string) => vo
 
   const handleToggleFavorite = async (postId: string) => {
     try {
-      await setFavorite(postId, false, user?.id ?? null);
+      await setFavorite(postId, false);
       setPosts(posts.filter(p => p.id !== postId));
       success('Removed from favorites');
     } catch {
@@ -81,10 +79,7 @@ export function FavoritesPage({ onNavigate }: { onNavigate: (page: string) => vo
 
       {storageMode === 'local' && (
         <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
-          <span>Favourites are stored in this browser only. Add Supabase keys to <code>.env</code> to sync them.</span>
-          <button onClick={() => onNavigate('auth')} className="ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium">
-            Sign in
-          </button>
+          <span>Favourites are stored in this browser only. Clearing your browser data will remove them.</span>
         </div>
       )}
 

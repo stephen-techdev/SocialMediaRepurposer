@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import type { Post, Analytics } from '../lib/supabase';
 import { listAnalytics, listPosts } from '../lib/store';
 import {
@@ -23,7 +22,6 @@ interface Stats {
 }
 
 export function DashboardPage({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
     totalPosts: 0,
     favoritesCount: 0,
@@ -36,10 +34,9 @@ export function DashboardPage({ onNavigate }: { onNavigate: (page: string) => vo
   useEffect(() => {
     async function fetchStats() {
       try {
-        const ownerId = user?.id ?? null;
         const [allPosts, weekly] = await Promise.all([
-          listPosts({ userId: ownerId, limit: 500 }),
-          listAnalytics(ownerId, 12),
+          listPosts({ limit: 500 }),
+          listAnalytics(12),
         ]);
 
         const weekAgo = new Date();
@@ -60,7 +57,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (page: string) => vo
     }
 
     void fetchStats();
-  }, [user?.id]);
+  }, []);
 
   if (loading) {
     return (
@@ -77,19 +74,13 @@ export function DashboardPage({ onNavigate }: { onNavigate: (page: string) => vo
           <Sparkles className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Nothing generated yet</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {user
-              ? 'Paste a story on the Repurpose page and your activity will show up here.'
-              : 'Paste a story on the Repurpose page. Everything is saved in this browser - no account needed. Sign in only if you want it synced across devices.'}
+            Paste a story on the Repurpose page and your activity will show up here. Everything is saved
+            in this browser.
           </p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => onNavigate('repurpose')} className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium">
               Start Creating
             </button>
-            {!user && (
-              <button onClick={() => onNavigate('auth')} className="px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                Sign in
-              </button>
-            )}
           </div>
         </div>
       </div>
