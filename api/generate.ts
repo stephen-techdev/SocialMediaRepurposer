@@ -14,8 +14,10 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import { createGenerateHandler, type Transport } from '../server/aiHandler';
-import { COOKIE_NAME, isValidSession, readCookie } from '../server/aiSession';
+// `.js` extensions are required: Vercel compiles these to native ESM, and Node's
+// ESM resolver does not do extensionless lookups. Vite resolves these too.
+import { createGenerateHandler, type Transport } from '../server/aiHandler.js';
+import { COOKIE_NAME, isValidSession, readCookie } from '../server/aiSession.js';
 
 const generate = createGenerateHandler({
   env: process.env,

@@ -8,7 +8,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { COOKIE_NAME } from './aiCore';
+import { COOKIE_NAME } from './aiCore.js';
 
 function sign(value: string, secret: string): string {
   return createHmac('sha256', secret).update(value).digest('base64url');

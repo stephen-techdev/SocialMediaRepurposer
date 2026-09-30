@@ -8,8 +8,10 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import { health } from '../server/aiHandler';
-import { issueSession } from '../server/aiSession';
+// `.js` extensions are required: Vercel compiles these to native ESM, and Node's
+// ESM resolver does not do extensionless lookups. Vite resolves these too.
+import { health } from '../server/aiHandler.js';
+import { issueSession } from '../server/aiSession.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

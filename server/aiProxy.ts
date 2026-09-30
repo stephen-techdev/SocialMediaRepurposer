@@ -12,9 +12,9 @@
  */
 import { loadEnv, type Connect, type Plugin, type PreviewServer, type ViteDevServer } from 'vite';
 
-import { readAIConfig, MAX_BODY_BYTES } from './aiCore';
-import { createGenerateHandler, health, type Transport } from './aiHandler';
-import { COOKIE_NAME, isValidSession, issueSession, readCookie } from './aiSession';
+import { readAIConfig, MAX_BODY_BYTES } from './aiCore.js';
+import { createGenerateHandler, health, type Transport } from './aiHandler.js';
+import { COOKIE_NAME, isValidSession, issueSession, readCookie } from './aiSession.js';
 
 function readBody(req: Connect.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {

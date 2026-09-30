@@ -11,7 +11,7 @@ import {
   createRateLimiter,
   readAIConfig,
   type AIConfig,
-} from './aiCore';
+} from './aiCore.js';
 
 /** Minimal shape both Node's http and Vercel's helpers can satisfy. */
 export interface Transport {
